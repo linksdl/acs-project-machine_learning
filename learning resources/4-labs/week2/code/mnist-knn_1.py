@@ -124,3 +124,4 @@ k_values = [1, 3, 5, 10, 100]
 for k in k_values:
     accuracy = compute_accuracy(x_train, x_test, k)
 
+np.invert()
