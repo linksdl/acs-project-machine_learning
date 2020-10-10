@@ -86,7 +86,6 @@ def predict(ytrain, distances, k=1):
     y_pred = np.zeros(num_test, dtype=np.dtype(int))
 
     for i in range(num_test):
-        closest_y = []
         indics = np.argsort(distances[i])
         closest_y = ytrain[indics[:k]]
 
@@ -124,4 +123,3 @@ k_values = [1, 3, 5, 10, 100]
 for k in k_values:
     accuracy = compute_accuracy(x_train, x_test, k)
 
-np.invert()
