@@ -2,7 +2,7 @@ import numpy as np
 
 
 class MLP:
-    " Multi-layer perceptron " 
+    " Multi-layer perceptron "
     def __init__(self, sizes, beta=1, momentum=0.9):
 
         """
@@ -21,13 +21,13 @@ class MLP:
         self.momentum = momentum
 
         self.nin = sizes[0] # number of features in each sample
-        self.nhidden1 = sizes[1] # number of neurons in the first hidden layer 
-        self.nhidden2 = sizes[2] # number of neurons in the second hidden layer 
+        self.nhidden1 = sizes[1] # number of neurons in the first hidden layer
+        self.nhidden2 = sizes[2] # number of neurons in the second hidden layer
         self.nout = sizes[3] # number of classes / the number of neurons in the output layer
 
 
-        # Initialise the network of two hidden layers 
-        self.weights1 = (np.random.rand(self.nin+1,self.nhidden1)-0.5)*2/np.sqrt(self.nin) # hidden layer 1 
+        # Initialise the network of two hidden layers
+        self.weights1 = (np.random.rand(self.nin+1,self.nhidden1)-0.5)*2/np.sqrt(self.nin) # hidden layer 1
         self.weights2 = (np.random.rand(self.nhidden1+1,self.nhidden2)-0.5)*2/np.sqrt(self.nhidden1) # hidden layer 2
         self.weights3 = (np.random.rand(self.nhidden2+1,self.nout)-0.5)*2/np.sqrt(self.nhidden2) # output layer
 
@@ -44,12 +44,12 @@ class MLP:
         niterations is the number of iterations for updating the weights 
 
         """
-        ndata = np.shape(inputs)[0] # number of data samples 
+        ndata = np.shape(inputs)[0] # number of data samples
         # adding the bias
         inputs = np.concatenate((inputs,-np.ones((ndata,1))),axis=1)
 
-        # numpy array to store the update weights 
-        updatew1 = np.zeros((np.shape(self.weights1))) 
+        # numpy array to store the update weights
+        updatew1 = np.zeros((np.shape(self.weights1)))
         updatew2 = np.zeros((np.shape(self.weights2)))
         updatew3 = np.zeros((np.shape(self.weights3)))
 
@@ -64,43 +64,43 @@ class MLP:
             # backward phase where you will compute the derivative of the layers and update 
             # their weights. 
             #############################################################################
-            
+
             # forward phase 
             self.outputs = self.forwardPass(inputs)
 
-
+            #return np.shape(self.outputs)
             # Error using the sum-of-squares error function
-            error = 0.5*np.sum((self.outputs-targets)**2)
+            error = 0.5 * np.sum((self.outputs - targets) ** 2)
 
             if (np.mod(n,100)==0):
-                print("Iteration: ",n, " Error: ",error)
+                print("Iteration: ", n, " Error: ", error)
 
             # backward phase 
             # Compute the derivative of the output layer. NOTE: you will need to compute the derivative of 
             # the softmax function. Hints: equation 4.55 in the book. 
-            deltao = None 
+            deltao = (self.outputs - targets) * (self.outputs - self.outputs ** 2)
+
+            # return np.shape(deltao)
+            # compute the derivative of the second hidden layer
+            deltah2 = self.beta * self.hidden2 * (1.0 - self.hidden2) * (np.dot(deltao, np.transpose(self.weights3)))
 
 
-            # compute the derivative of the second hidden layer 
-            deltah2 = None 
+            #return np.shape(deltah2)
+            # compute the derivative of the first hidden layer
+            deltah1 = self.beta * self.hidden1 * (1.0 - self.hidden1) * (np.dot(deltah2[:, :-1], np.transpose(self.weights2)))
 
-
-
-            # compute the derivative of the first hidden layer 
-            deltah1 = None
-
-
-
+            #return np.shape(deltah1)
             # update the weights of the three layers: self.weights1, self.weights2 and self.weights3
             # here you can update the weights as we did in the week 4 lab (using gradient descent) 
             # but you can also add the momentum 
-            updatew1 = None
-            updatew2 = None
-            updatew3 = None
+            updatew1 = eta * np.dot(np.transpose(inputs), deltah1[:,:-1])
+            updatew2 = eta * np.dot(np.transpose(self.hidden1), deltah2[:,:-1])
+            updatew3 = eta * np.dot(np.transpose(self.hidden2), deltao)
 
             self.weights1 -= updatew1
             self.weights2 -= updatew2
             self.weights3 -= updatew3
+
             #############################################################################
             # END of YOUR CODE 
             #############################################################################
@@ -119,20 +119,23 @@ class MLP:
         # sigmoid function. The output layer activation function is the softmax function
         # because we are working with multi-class classification. 
         #############################################################################
-        
+
         # layer 1 
         # compute the forward pass on the first hidden layer with the sigmoid function
-        self.hidden1 = None 
+        self.hidden1 = self.sigmoid_fun(np.dot(inputs, self.weights1))
+        self.hidden1 = 1 / (1 + np.exp(-self.beta*self.hidden1))
+        self.hidden1 = np.concatenate((self.hidden1, -np.ones((np.shape(inputs)[0], 1))), axis=1)
 
         # layer 2
         # compute the forward pass on the second hidden layer with the sigmoid function
-        self.hidden2 = None
+        self.hidden2 = self.sigmoid_fun(np.dot(self.hidden1, self.weights2))
+        self.hidden2 = 1 / (1 + np.exp(-self.beta*self.hidden2))
+        self.hidden2 = np.concatenate((self.hidden2, -np.ones((np.shape(self.hidden1)[0], 1))), axis=1)
 
-
-        # output layer 
+        # output layer
         # compute the forward pass on the output layer with softmax function
-        outputs = None 
-
+        outputs = np.dot(self.hidden2, self.weights3)
+        outputs = np.exp(self.beta * outputs) / np.sum(np.exp(self.beta * outputs), axis=1, keepdims=True)
 
         #############################################################################
         # END of YOUR CODE 
@@ -167,4 +170,24 @@ class MLP:
         print("The confusion matrix is:")
         print(cm)
         print("The accuracy is ",np.trace(cm)/np.sum(cm)*100)
- 
+
+
+
+    def sigmoid_fun(self, X):
+        """
+        implement the sigmoid activation function
+
+        :param X:
+        :return:
+        """
+        return 1.0 /(1.0 + np.exp(-self.beta * X))
+
+
+    def softmax_fun(self, X):
+        """
+         implement the softmax activation function
+        :param X:
+        :return:
+        """
+
+        return np.exp(self.beta * X) / np.sum(np.exp(self.beta * X), axis=1, keepdims=True)
