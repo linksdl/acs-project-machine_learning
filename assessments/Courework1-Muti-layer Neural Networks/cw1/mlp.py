@@ -73,7 +73,7 @@ class MLP:
             # Error using the sum-of-squares error function
             error = 0.5 * np.sum((self.outputs - targets) ** 2)
 
-            if np.mod(n, 10) == 0:
+            if np.mod(n, 100) == 0:
                 self.Errors.append(error)
                 print("Iteration: ", n, " Error: ", error)
 
@@ -192,7 +192,7 @@ class MLP:
         return x
 
     def plot_error(self, niter):
-        X = [x for x in range(0, int(niter), 10)]
+        X = [x for x in range(0, int(niter), 100)]
         Y = self.Errors
         plt.plot(X, Y, 'g*-')
 
@@ -227,11 +227,11 @@ for i in range(teread):
 # classifier.train(train_in, train_tgt, 0.1, 1000)
 # classifier.evaluate(test_in, test_tgt)
 
-best_sizes = [784, 12, 8, 10]
+best_sizes = [784, 10, 8, 10]
 best_beta = 0.9
 best_momentum = 0
 best_lr = 0.001 # best learning rate
-best_niterations = 2000
+best_niterations = 3000
 best_classifier = MLP(sizes = best_sizes, beta=best_beta, momentum=best_momentum)
 best_classifier.train(train_in, train_tgt, best_lr, best_niterations)
 best_classifier.evaluate(test_in, test_tgt)
