@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 
 class MLP:
@@ -46,14 +48,14 @@ class MLP:
         """
         ndata = np.shape(inputs)[0] # number of data samples
         # adding the bias
-        inputs = np.concatenate((inputs,-np.ones((ndata,1))),axis=1)
+        inputs = np.concatenate((inputs, -np.ones((ndata, 1))), axis=1)
 
         # numpy array to store the update weights
         updatew1 = np.zeros((np.shape(self.weights1)))
         updatew2 = np.zeros((np.shape(self.weights2)))
         updatew3 = np.zeros((np.shape(self.weights3)))
 
-
+        self.Errors = []
         for n in range(niterations):
 
             #############################################################################
@@ -68,34 +70,34 @@ class MLP:
             # forward phase 
             self.outputs = self.forwardPass(inputs)
 
-            #return np.shape(self.outputs)
             # Error using the sum-of-squares error function
             error = 0.5 * np.sum((self.outputs - targets) ** 2)
 
-            if (np.mod(n,100)==0):
+            if np.mod(n, 10) == 0:
+                self.Errors.append(error)
                 print("Iteration: ", n, " Error: ", error)
 
             # backward phase 
             # Compute the derivative of the output layer. NOTE: you will need to compute the derivative of 
             # the softmax function. Hints: equation 4.55 in the book. 
-            deltao = (self.outputs - targets) * (self.outputs - self.outputs ** 2)
+            # deltao = (self.outputs - targets) * (self.outputs - self.outputs ** 2)
+            deltao = (self.outputs - targets) * self.outputs * (1 - self.outputs)
 
-            # return np.shape(deltao)
             # compute the derivative of the second hidden layer
+
             deltah2 = self.beta * self.hidden2 * (1.0 - self.hidden2) * (np.dot(deltao, np.transpose(self.weights3)))
 
 
-            #return np.shape(deltah2)
             # compute the derivative of the first hidden layer
             deltah1 = self.beta * self.hidden1 * (1.0 - self.hidden1) * (np.dot(deltah2[:, :-1], np.transpose(self.weights2)))
 
-            #return np.shape(deltah1)
             # update the weights of the three layers: self.weights1, self.weights2 and self.weights3
             # here you can update the weights as we did in the week 4 lab (using gradient descent) 
-            # but you can also add the momentum 
-            updatew1 = eta * np.dot(np.transpose(inputs), deltah1[:,:-1])
-            updatew2 = eta * np.dot(np.transpose(self.hidden1), deltah2[:,:-1])
-            updatew3 = eta * np.dot(np.transpose(self.hidden2), deltao)
+            # but you can also add the momentum
+
+            updatew1 = eta * np.dot(np.transpose(inputs), deltah1[:, :-1])  + self.momentum * updatew1
+            updatew2 = eta * np.dot(np.transpose(self.hidden1), deltah2[:, :-1])  + self.momentum * updatew2
+            updatew3 = eta * np.dot(np.transpose(self.hidden2), deltao)   + self.momentum * updatew3
 
             self.weights1 -= updatew1
             self.weights2 -= updatew2
@@ -122,21 +124,23 @@ class MLP:
 
         # layer 1 
         # compute the forward pass on the first hidden layer with the sigmoid function
-        self.hidden1 = self.sigmoid_fun(np.dot(inputs, self.weights1))
-        self.hidden1 = 1 / (1 + np.exp(-self.beta*self.hidden1))
-        self.hidden1 = np.concatenate((self.hidden1, -np.ones((np.shape(inputs)[0], 1))), axis=1)
+
+        self.hidden1 = np.dot(inputs, self.weights1)    #(9000, 785) (785, 5)
+        self.hidden1 = self.sigmoid_fun(self.hidden1)   #(9000, 5)
+        self.hidden1 = np.concatenate((self.hidden1, -np.ones((np.shape(inputs)[0], 1))), axis=1) # (9000,6)
+
 
         # layer 2
         # compute the forward pass on the second hidden layer with the sigmoid function
-        self.hidden2 = self.sigmoid_fun(np.dot(self.hidden1, self.weights2))
-        self.hidden2 = 1 / (1 + np.exp(-self.beta*self.hidden2))
-        self.hidden2 = np.concatenate((self.hidden2, -np.ones((np.shape(self.hidden1)[0], 1))), axis=1)
+        self.hidden2 = np.dot(self.hidden1, self.weights2)               # (9000,6) (6, 5)
+        self.hidden2 = self.sigmoid_fun(self.hidden2)                   # (9000,5)
+        self.hidden2 = np.concatenate((self.hidden2, -np.ones((np.shape(self.hidden1)[0], 1))), axis=1)  # (9000,6)
 
         # output layer
         # compute the forward pass on the output layer with softmax function
-        outputs = np.dot(self.hidden2, self.weights3)
-        outputs = np.exp(self.beta * outputs) / np.sum(np.exp(self.beta * outputs), axis=1, keepdims=True)
-
+        outputs = np.dot(self.hidden2, self.weights3)  # (9000,6) (6, 10)
+        outputs = self.softmax_fun(outputs)            # (9000,10)
+        # print(outputs)
         #############################################################################
         # END of YOUR CODE 
         #############################################################################
@@ -169,25 +173,74 @@ class MLP:
 
         print("The confusion matrix is:")
         print(cm)
+        self.accuracy = np.trace(cm)/np.sum(cm)*100
         print("The accuracy is ",np.trace(cm)/np.sum(cm)*100)
 
 
-
-    def sigmoid_fun(self, X):
-        """
-        implement the sigmoid activation function
-
-        :param X:
-        :return:
-        """
-        return 1.0 /(1.0 + np.exp(-self.beta * X))
+    def sigmoid_fun(self, x):
+        x = self.beta * x
+        return 1/(1 + np.exp(-x))
 
 
-    def softmax_fun(self, X):
-        """
-         implement the softmax activation function
-        :param X:
-        :return:
-        """
+    def softmax_fun(self, x):
+        len  = np.shape(x)[0]
+        for i in range(len):
+            v = x[i]
+            for j in range(np.shape(v)[0]):
+                x[i][j] = np.exp(v[j]) / np.sum(np.exp(v))
 
-        return np.exp(self.beta * X) / np.sum(np.exp(self.beta * X), axis=1, keepdims=True)
+        return x
+
+    def plot_error(self, niter):
+        X = [x for x in range(0, int(niter), 10)]
+        Y = self.Errors
+        plt.plot(X, Y, 'g*-')
+
+
+import pickle, gzip
+
+f = gzip.open('mnist.pkl.gz','rb')
+tset, vset, teset = pickle.load(f, encoding='latin1')
+print(tset[0].shape, vset[0].shape, teset[0].shape)
+f.close()
+
+# Just use the first 9000 images for training
+tread = 9000
+train_in = tset[0][:tread, :]
+
+# This is a little bit of work -- 1 of N encoding
+# Make sure you understand how it does it
+train_tgt = np.zeros((tread,10))
+for i in range(tread):
+    train_tgt[i,tset[1][i]] = 1
+
+# and use 1000 images for testing
+teread = 1000
+test_in = teset[0][:teread,:]
+test_tgt = np.zeros((teread,10))
+for i in range(teread):
+    test_tgt[i,teset[1][i]] = 1
+
+
+# sizes = [784,5,5,10] # 784 is the number of pixels of the images and 10 is the number of classes
+# classifier = MLP(sizes)
+# classifier.train(train_in, train_tgt, 0.1, 1000)
+# classifier.evaluate(test_in, test_tgt)
+
+best_sizes = [784, 12, 8, 10]
+best_beta = 0.9
+best_momentum = 0
+best_lr = 0.001 # best learning rate
+best_niterations = 2000
+best_classifier = MLP(sizes = best_sizes, beta=best_beta, momentum=best_momentum)
+best_classifier.train(train_in, train_tgt, best_lr, best_niterations)
+best_classifier.evaluate(test_in, test_tgt)
+
+best_classifier.plot_error(best_niterations)
+plt.xlabel('the number of iterations')
+plt.ylabel('the errors')
+accuracy = round(best_classifier.accuracy, 2)
+plt.text(best_niterations/2, 4000, r'$accuracy:\ '+str(accuracy)+'\%$', fontdict={'size':'12', 'color':'r'})
+plt.title('sizes:{}, beta:{}, momentum:{}, lr:{}, '
+          'niter:{}'.format(best_sizes, best_beta, best_momentum, best_lr, best_niterations))
+plt.show()
