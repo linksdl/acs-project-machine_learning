@@ -227,11 +227,11 @@ for i in range(teread):
 # classifier.train(train_in, train_tgt, 0.1, 1000)
 # classifier.evaluate(test_in, test_tgt)
 
-best_sizes = [784, 10, 8, 10]
+best_sizes = [784, 50, 20, 10]
 best_beta = 0.9
 best_momentum = 0
 best_lr = 0.001 # best learning rate
-best_niterations = 3000
+best_niterations = 2500
 best_classifier = MLP(sizes = best_sizes, beta=best_beta, momentum=best_momentum)
 best_classifier.train(train_in, train_tgt, best_lr, best_niterations)
 best_classifier.evaluate(test_in, test_tgt)
