@@ -126,7 +126,8 @@ class MLP:
         # compute the forward pass on the first hidden layer with the sigmoid function
 
         self.hidden1 = np.dot(inputs, self.weights1)    #(9000, 785) (785, 5)
-        self.hidden1 = self.sigmoid_fun(self.hidden1)   #(9000, 5)
+        # self.hidden1 = self.sigmoid_fun(self.hidden1)   #(9000, 5)
+        self.hidden1 = 1.0 / (1.0 + np.exp(-self.beta*self.hidden1))
         self.hidden1 = np.concatenate((self.hidden1, -np.ones((np.shape(inputs)[0], 1))), axis=1) # (9000,6)
 
 
@@ -139,7 +140,9 @@ class MLP:
         # output layer
         # compute the forward pass on the output layer with softmax function
         outputs = np.dot(self.hidden2, self.weights3)  # (9000,6) (6, 10)
-        outputs = self.softmax_fun(outputs)            # (9000,10)
+        normalisers = np.sum(np.exp(outputs), axis=1)*np.ones((1, np.shape(outputs)[0]))
+        outputs = np.transpose(np.transpose(np.exp(outputs)) / normalisers)
+        # outputs = self.softmax_fun(outputs)            # (9000,10)
         # print(outputs)
         #############################################################################
         # END of YOUR CODE 
@@ -227,11 +230,11 @@ for i in range(teread):
 # classifier.train(train_in, train_tgt, 0.1, 1000)
 # classifier.evaluate(test_in, test_tgt)
 
-best_sizes = [784, 50, 20, 10]
-best_beta = 0.9
-best_momentum = 0
+best_sizes = [784, 40, 20, 10]
+best_beta = 2
+best_momentum = 0.5
 best_lr = 0.001 # best learning rate
-best_niterations = 2500
+best_niterations = 1200
 best_classifier = MLP(sizes = best_sizes, beta=best_beta, momentum=best_momentum)
 best_classifier.train(train_in, train_tgt, best_lr, best_niterations)
 best_classifier.evaluate(test_in, test_tgt)
