@@ -200,50 +200,50 @@ class MLP:
         plt.plot(X, Y, 'g*-')
 
 
-import pickle, gzip
-
-f = gzip.open('mnist.pkl.gz','rb')
-tset, vset, teset = pickle.load(f, encoding='latin1')
-print(tset[0].shape, vset[0].shape, teset[0].shape)
-f.close()
-
-# Just use the first 9000 images for training
-tread = 9000
-train_in = tset[0][:tread, :]
-
-# This is a little bit of work -- 1 of N encoding
-# Make sure you understand how it does it
-train_tgt = np.zeros((tread,10))
-for i in range(tread):
-    train_tgt[i,tset[1][i]] = 1
-
-# and use 1000 images for testing
-teread = 1000
-test_in = teset[0][:teread,:]
-test_tgt = np.zeros((teread,10))
-for i in range(teread):
-    test_tgt[i,teset[1][i]] = 1
-
-
-# sizes = [784,5,5,10] # 784 is the number of pixels of the images and 10 is the number of classes
-# classifier = MLP(sizes)
-# classifier.train(train_in, train_tgt, 0.1, 1000)
-# classifier.evaluate(test_in, test_tgt)
-
-best_sizes = [784, 40, 20, 10]
-best_beta = 2
-best_momentum = 0.5
-best_lr = 0.001 # best learning rate
-best_niterations = 1200
-best_classifier = MLP(sizes = best_sizes, beta=best_beta, momentum=best_momentum)
-best_classifier.train(train_in, train_tgt, best_lr, best_niterations)
-best_classifier.evaluate(test_in, test_tgt)
-
-best_classifier.plot_error(best_niterations)
-plt.xlabel('the number of iterations')
-plt.ylabel('the errors')
-accuracy = round(best_classifier.accuracy, 2)
-plt.text(best_niterations/2, 4000, r'$accuracy:\ '+str(accuracy)+'\%$', fontdict={'size':'12', 'color':'r'})
-plt.title('sizes:{}, beta:{}, momentum:{}, lr:{}, '
-          'niter:{}'.format(best_sizes, best_beta, best_momentum, best_lr, best_niterations))
-plt.show()
+# import pickle, gzip
+#
+# f = gzip.open('mnist.pkl.gz','rb')
+# tset, vset, teset = pickle.load(f, encoding='latin1')
+# print(tset[0].shape, vset[0].shape, teset[0].shape)
+# f.close()
+#
+# # Just use the first 9000 images for training
+# tread = 9000
+# train_in = tset[0][:tread, :]
+#
+# # This is a little bit of work -- 1 of N encoding
+# # Make sure you understand how it does it
+# train_tgt = np.zeros((tread,10))
+# for i in range(tread):
+#     train_tgt[i,tset[1][i]] = 1
+#
+# # and use 1000 images for testing
+# teread = 1000
+# test_in = teset[0][:teread,:]
+# test_tgt = np.zeros((teread,10))
+# for i in range(teread):
+#     test_tgt[i,teset[1][i]] = 1
+#
+#
+# # sizes = [784,5,5,10] # 784 is the number of pixels of the images and 10 is the number of classes
+# # classifier = MLP(sizes)
+# # classifier.train(train_in, train_tgt, 0.1, 1000)
+# # classifier.evaluate(test_in, test_tgt)
+#
+# best_sizes = [784, 40, 20, 10]
+# best_beta = 2
+# best_momentum = 0.5
+# best_lr = 0.001 # best learning rate
+# best_niterations = 1200
+# best_classifier = MLP(sizes = best_sizes, beta=best_beta, momentum=best_momentum)
+# best_classifier.train(train_in, train_tgt, best_lr, best_niterations)
+# best_classifier.evaluate(test_in, test_tgt)
+#
+# best_classifier.plot_error(best_niterations)
+# plt.xlabel('the number of iterations')
+# plt.ylabel('the errors')
+# accuracy = round(best_classifier.accuracy, 2)
+# plt.text(best_niterations/2, 4000, r'$accuracy:\ '+str(accuracy)+'\%$', fontdict={'size':'12', 'color':'r'})
+# plt.title('sizes:{}, beta:{}, momentum:{}, lr:{}, '
+#           'niter:{}'.format(best_sizes, best_beta, best_momentum, best_lr, best_niterations))
+# plt.show()
