@@ -26,7 +26,7 @@ class Agent:
         self.actionCnt = env.action_space.n  # left:0; down:1; right:2; up:3
         self.learning_rate = 0.01
         self.gamma = 0.99
-        self.epsilon = 0.1
+        self.epsilon = 0.8
         self.Q = self.initialise_Q_values()
 
     def initialise_Q_values(self):
@@ -34,20 +34,20 @@ class Agent:
         q_table = np.ones((self.stateCnt, self.actionCnt)) * 0.5
         # Set the init reward value equal 0 due to some of state is no left, no down, no left, no up.
         # no left
-        for i in range(0, 64, 8):
-            q_table[i][0] = 0
-
-        # no down
-        for i in range(56, 64, 1):
-            q_table[i][1] = 0
-
-        # no left
-        for i in range(7, 64, 8):
-            q_table[i][2] = 0
-
-        # no up
-        for i in range(8):
-            q_table[i][3] = 0
+        # for i in range(0, 64, 8):
+        #     q_table[i][0] = 0
+        #
+        # # no down
+        # for i in range(56, 64, 1):
+        #     q_table[i][1] = 0
+        #
+        # # no left
+        # for i in range(7, 64, 8):
+        #     q_table[i][2] = 0
+        #
+        # # no up
+        # for i in range(8):
+        #     q_table[i][3] = 0
         return q_table
 
     def predict_value(self, s):
@@ -100,51 +100,58 @@ class World:
         state = self.env.reset()
         r_total = 0
         episodeStepsCnt = 0
-        # success         = False
+        success         = False
 
         for i in range(self.maxStepsPerEpisode):
+
             action = agent.choose_action(state)
             s_next, reward, done, info = self.env.step(action)
+            r_total += reward
             # Q-learning
             agent.update_value_Q(state, action, reward, s_next, done)
-            agent.updateEpsilon(episodeStepsCnt)
-            state = s_next
-            r_total += reward
-            episodeStepsCnt += 1
             self.env.render()
-            if i == 0:
-                self.q_Sinit_progress = np.append(self.q_Sinit_progress, np.array([agent.Q[state, :]]), axis=0)
             if done:
+                if s_next == 63:
+                    success = True
                 break
 
-        return r_total, episodeStepsCnt
+            state = s_next
+            if i == 0:
+                self.q_Sinit_progress = np.append(self.q_Sinit_progress, np.array([agent.Q[state]]), axis=0)
+
+            episodeStepsCnt += 1
+            agent.updateEpsilon(episodeStepsCnt)
+
+
+        return r_total, episodeStepsCnt,success
 
     def run_episode_sarsa(self):
         state = self.env.reset()  # "reset" environment to start state
         r_total = 0
         episodeStepsCnt = 0
         success = False
+
         action = agent.choose_action(state)
         for i in range(self.maxStepsPerEpisode):
-
-            s_next, reward, done, info = self.env.step(action)
-            a_next = agent.choose_action(s_next)
-
-            # SARSA-learning
-            agent.update_value_S(state, action, reward, s_next, a_next, done)
-            state  = s_next
-            action = a_next
-
-            agent.updateEpsilon(episodeStepsCnt)
-            r_total += reward
-            episodeStepsCnt += 1
-            self.env.render()
             if i == 0:
                 self.q_Sinit_progress = np.append(self.q_Sinit_progress, np.array([agent.Q[state]]), axis=0)
+            s_next, reward, done, info = self.env.step(action)
+            a_next = agent.choose_action(s_next)
+            r_total += reward
+            # SARSA-learning
+            agent.update_value_S(state, action, reward, s_next, a_next, done)
+            self.env.render()
             if done:
+                if s_next == 63:
+                    success = True
                 break
+            state  = s_next
+            action = a_next
+            episodeStepsCnt += 1
+            agent.updateEpsilon(episodeStepsCnt)
 
-        return r_total, episodeStepsCnt
+
+        return r_total, episodeStepsCnt,success
 
     def run_evaluation_episode(self):
         agent.epsilon = 0
@@ -157,13 +164,14 @@ if __name__ == '__main__':
     agent = Agent(env)  # This will creat an agent
     r_total_progress = []
     episodeStepsCnt_progress = []
-    nbOfTrainingEpisodes = 1200
+    nbOfTrainingEpisodes = 1000
     for i in range(nbOfTrainingEpisodes):
         print('\n========================\n   Episode: {}\n========================'.format(i))
 
         # run_episode_qlearning or run_episode_sarsa
-        r_total, episodeStepsCnt = world.run_episode_qlearning()
-        # r_total, episodeStepsCnt = world.run_episode_sarsa()
+        # r_total, episodeStepsCnt, success = world.run_episode_qlearning()
+        r_total, episodeStepsCnt, success = world.run_episode_sarsa()
+        print(r_total)
         r_total_progress.append(r_total)
         # append to r_total_progress and episodeStepsCnt_progress
         episodeStepsCnt_progress.append(episodeStepsCnt)
